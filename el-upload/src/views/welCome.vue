@@ -29,6 +29,7 @@ export default {
     top:0px;
     left:0px;
     z-index: -100;
+    object-fit:fill
   }
   source {
     height: auto;
