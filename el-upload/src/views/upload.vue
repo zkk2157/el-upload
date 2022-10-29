@@ -30,8 +30,8 @@
     <div class="Upload">
       <el-button type="success" @click="UpLoad">点击上传</el-button>
     </div>
-    <div class="preview" v-if="isShow">
-      <img :src="imgSrc" />
+    <div class="preview">
+      <img v-for="imgSrc in imgSrcs" :key="imgSrc" :src="imgSrc" />
     </div>
   </div>
 </template>
@@ -40,6 +40,7 @@
 import { indexOf } from "lodash";
 import { reactive, ref, computed } from "vue";
 import http from "../service/index.js";
+import { ElMessage } from "element-plus";
 export default {
   name: "UpLoadFiles",
 
@@ -48,8 +49,9 @@ export default {
     const input = ref(null);
     let percentage = ref(0);
     let imgSrc = ref("");
+    const imgSrcs = reactive([]);
     const isShow = ref(false);
-    const reader = new FileReader();
+    // const reader = new FileReader();
     // computed(()=>{
     //   return !!
     // })
@@ -58,42 +60,87 @@ export default {
     }
     function getFiles(event) {
       files.push(event.target.files[0]);
+      const reader = new FileReader();
       reader.readAsDataURL(event.target.files[0]);
-    }
-    reader.addEventListener("load", (event) => {
-      isShow.value = true;
-      imgSrc.value = event.target.result;
-      // console.log(event.target);
-    });
-    function handleClose(tag) {
-      files.splice(indexOf(tag), 1);
-      isShow.value = false;
-    }
-    async function UpLoad() {
-      const fileData = new FormData();
 
-      files.forEach((file) => {
-        fileData.append(file.name, file);
+      reader.addEventListener("load", (event) => {
+        // imgSrc.value = event.target.result;
+        imgSrcs.push(event.target.result);
       });
-      let config = {
-        onUploadProgress: (progressEvent) => {
-          let persent =
-            ((progressEvent.loaded / progressEvent.total) * 100) | 0; //上传进度百分比
-          // console.log(persent);
-          percentage.value = persent;
-        },
-      };
+    }
+    // reader.addEventListener("load", (event) => {
+    //   isShow.value = true;
+    //   imgSrc.value = event.target.result;
+    //   // console.log(event.target);
+    // });
+    function handleClose(tag) {
+      const order = files.indexOf(tag);
+      files.splice(order, 1);
+      imgSrcs.splice(order, 1);
+    }
+    // async function UpLoad() {
+    //   const fileData = new FormData();
 
-      const info = await http.post("/upload", fileData, config);
+    //   files.forEach((file) => {
+    //     fileData.append(file.name, file);
+    //   });
+    //   let config = {
+    //     onUploadProgress: (progressEvent) => {
+    //       let persent =
+    //         ((progressEvent.loaded / progressEvent.total) * 100) | 0; //上传进度百分比
+    //       // console.log(persent);
+    //       percentage.value = persent;
+    //     },
+    //   };
+
+    //   const info = await http.post("/upload", fileData, config);
+    //   setTimeout(() => {
+    //     percentage.value = 0;
+    //   }, 1000);
+    //   if (info.data.success) {
+    //     ElMessage({
+    //       message: "上传成功！",
+    //       type: "success",
+    //     });
+    //   }
+    // }
+    async function UpLoad() {
+      const asyncTask = [];
+      files.forEach((file) => {
+        const fileData = new FormData();
+        fileData.append(file.name, file);
+
+        let config = {
+          onUploadProgress: (progressEvent) => {
+            let persent =
+              ((progressEvent.loaded / progressEvent.total) * 100) | 0; //上传进度百分比
+            // console.log(persent);
+            percentage.value = persent;
+          },
+        };
+        const aTask = http.post("/upload", fileData, config);
+        asyncTask.push(aTask);
+      });
+      const res = await Promise.allSettled(asyncTask);
+      // if (res[0].value.data.success) {
+      //   ElMessage({
+      //     message: "上传成功！",
+      //     type: "success",
+      //   });
+      // }
+      setTimeout(() => {
+        if (res[0].value.data.success) {
+          ElMessage({
+            message: "上传成功！",
+            type: "success",
+          });
+        } else {
+          ElMessage.error("上传失败！");
+        }
+      }, 600);
       setTimeout(() => {
         percentage.value = 0;
-      }, 1000);
-      if (info.data.success) {
-        ElMessage({
-          message: "上传成功！",
-          type: "success",
-        });
-      }
+      }, 2000);
     }
     return {
       choose,
@@ -103,7 +150,7 @@ export default {
       handleClose,
       UpLoad,
       percentage,
-      imgSrc,
+      imgSrcs,
       isShow,
     };
   },
@@ -153,7 +200,8 @@ export default {
   .preview {
     height: 100px;
     width: 200px;
-    img{
+    white-space: nowrap;
+    img {
       width: 100%;
       height: 100%;
       object-fit: contain;

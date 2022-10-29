@@ -20,6 +20,6 @@ server.use(koaBody({         //上传文件
 }))
 server.use(router.routes()).use(router.allowedMethods());
 
-server.listen(3000,'192.168.0.198',() => {
+server.listen(3000,'192.168.0.196',() => {
     console.log("服务器已启动!")
 })

@@ -4,7 +4,7 @@
 //3，baseUr1
 //4，授权的头部字段
 
-const DEV_URL = 'http://192.168.0.198:3000'
+const DEV_URL = 'http://192.168.0.196:3000'
 // const PRODUCTION_URL = 'http://www.baidu.com'
 
 import axios from "axios"
